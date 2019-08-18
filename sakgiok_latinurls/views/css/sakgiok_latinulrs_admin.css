@@ -1,0 +1,106 @@
+/** Copyright 2019 Sakis Gkiokas
+ * This file is part of sakgiok_latinurls module for Prestashop.
+ *
+ * Sakgiok_latinurls is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Sakgiok_latinurls is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * For any recommendations and/or suggestions please contact me
+ * at sakgiok@gmail.com
+ *
+ *  @author    Sakis Gkiokas <sakgiok@gmail.com>
+ *  @copyright 2019 Sakis Gkiokas
+ *  @license   https://opensource.org/licenses/GPL-3.0  GNU General Public License version 3
+ */
+
+.sg_latinurls_help_title{
+    font-weight: bold;
+    font-size: 1.2em;
+    margin-top: 2em;
+    border-top: 1px solid #a9b8bd;
+    padding-top: 1.5em;
+}
+.sg_latinurls_help_body{
+    font-weight: normal;
+    font-size: 1em;
+}
+
+.sg_latinurls_update_title_success{
+    color: #007b00;
+}
+.sg_latinurls_update_title_current{
+    color: #3b3bfb;
+}
+.sg_latinurlsupdate_title_error{
+    color: #c70000;
+}
+.sg_latinurls_update{
+
+}
+.sg_latinurls_update_out_current{
+    color: #3b3bfb;
+    margin: 0 0 1em 0;
+}
+.sg_latinurls_update_out_success{
+    color: #007b00;
+    margin: 0 0 1em 0;
+}
+.sg_latinurls_update_out_error{
+    color: #c70000;
+    margin: 0 0 1em 0;
+}
+.sg_latinurls_update_form{
+    margin: 0 0 1em 0;
+}
+.sg_latinurls_update_form button{
+    height: 3em;
+    width: 20em;
+}
+.sg_latinurls_pr_line{
+    margin: 0;
+    display: block;
+}
+.sg_latinurls_pr_lang_1{
+    color: #000;
+    background-color: #c4efff;
+}
+.sg_latinurls_pr_lang_2{
+    color: #000;
+    background-color: #c4ffc5;
+}
+.sg_latinurls_pr_lang_3{
+    color: #000;
+    background-color: #f7ffc4;
+}
+.sg_latinurls_pr_lang_4{
+    color: #000;
+    background-color: #ffe9c4;
+}
+.sg_latinurls_pr_lang_5{
+    color: #000;
+    background-color: #ffc4c4;
+}
+.sg_latinurls_pr_lang_x{
+    color: #000;
+    background-color: #ffc4f0;
+}
+.sg_latinurls_pr_lang_line{
+    display: inline-block;
+    min-width: 200px;
+    text-align: center;
+}
+.sakgiok_latinurls_action{
+    display: block;
+    margin: 5px 0;
+}
+#sakgiok_latinurls-workicon{
+    width: 25px;
+    height: auto;
+    margin: 0 0 0 10px;
+}
