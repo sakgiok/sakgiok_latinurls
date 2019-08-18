@@ -28,7 +28,8 @@ class sakgiok_latinurls extends Module
 {
 
     private $_showclearbutton = false;
-    private $def_exec_time = 10;
+    private $def_exec_time = 25;
+    private $use_exec_time = false;
     private $_html = '';
     private $_msg = array();
     private $_warnings = array();
@@ -56,6 +57,9 @@ class sakgiok_latinurls extends Module
         array('name' => 'SG_LATINURLS_AUTO_UPDATE', 'type' => 'Int', 'out' => 'auto update', 'multilang' => 0, 'req' => 0),
         array('name' => 'SG_LATINURLS_CHARS_INDEX', 'type' => 'Int', 'out' => 'char file index', 'multilang' => 0, 'req' => 0),
         array('name' => 'SG_LATINURLS_AUTOCONVERT', 'type' => 'Int', 'out' => 'auto convert', 'multilang' => 0, 'req' => 0),
+        array('name' => 'SG_LATINURLS_USEEXECTIME', 'type' => 'Int', 'out' => 'use max_exec_time', 'multilang' => 0, 'req' => 0),
+        array('name' => 'SG_LATINURLS_DEFEXECTIME', 'type' => 'Int', 'out' => 'default max_exec_time value', 'multilang' => 0, 'req' => 0),
+        array('name' => 'SG_LATINURLS_BATCHSIZE', 'type' => 'Int', 'out' => 'default max_exec_time value', 'multilang' => 0, 'req' => 0),
     );
     protected $_pagination = array(20, 50, 100, 300, 1000);
     protected $_default_pagination = 50;
@@ -67,7 +71,7 @@ class sakgiok_latinurls extends Module
             $this->is17 = true;
         }
         $this->name = 'sakgiok_latinurls';
-        $this->version = '1.0.0';
+        $this->version = '1.0.1';
         $this->author = 'Sakis Gkiokas';
         $this->need_instance = 1;
         $this->is_eu_compatible = 1;
@@ -100,6 +104,9 @@ class sakgiok_latinurls extends Module
                 or ! Configuration::updateValue('SG_LATINURLS_CHARS_INDEX', 0)
                 or ! Configuration::updateValue('SG_LATINURLS_AUTOCONVERT', 1)
                 or ! Configuration::updateValue('SG_LATINURLS_CONVERTCURSOR', 'null')
+                or ! Configuration::updateValue('SG_LATINURLS_DEFEXECTIME', 25)
+                or ! Configuration::updateValue('SG_LATINURLS_USEEXECTIME', 0)
+                or ! Configuration::updateValue('SG_LATINURLS_BATCHSIZE', 50)
         ) {
             return false;
         }
@@ -118,6 +125,9 @@ class sakgiok_latinurls extends Module
                 or ! Configuration::deleteByName('SG_LATINURLS_CHARS_INDEX')
                 or ! Configuration::deleteByName('SG_LATINURLS_AUTOCONVERT')
                 or ! Configuration::deleteByName('SG_LATINURLS_CONVERTCURSOR')
+                or ! Configuration::deleteByName('SG_LATINURLS_DEFEXECTIME')
+                or ! Configuration::deleteByName('SG_LATINURLS_USEEXECTIME')
+                or ! Configuration::deleteByName('SG_LATINURLS_BATCHSIZE')
                 or ! parent::uninstall()) {
             return false;
         }
@@ -215,9 +225,9 @@ class sakgiok_latinurls extends Module
         }
         $this->_html .= $this->renderMessages();
         $this->_html .= $this->renderHelpForm(false, $this->_checkupdate, $this->_hide_helpForm);
-        $this->_html .= $this->renderTestForm($responce);
-        $this->_html .= $this->renderConfigForm($this->_hide_configForm, $this->_confForm_getfrompost);
         $this->_html .= $this->renderActionForm();
+        $this->_html .= $this->renderConfigForm($this->_hide_configForm, $this->_confForm_getfrompost);
+        $this->_html .= $this->renderTestForm($responce);
         $this->_html .= $this->renderProductList();
         return $this->_html;
     }
@@ -250,6 +260,8 @@ class sakgiok_latinurls extends Module
     {
         $ret = true;
         self::$ignoreHook = true;
+        $this->def_exec_time = Configuration::get('SG_LATINURLS_DEFEXECTIME');
+        $this->use_exec_time = Configuration::get('SG_LATINURLS_USEEXECTIME');
         $pr_array = $this->getAllProducts();
 
         $max_executiontime = @ini_get('max_execution_time');
@@ -260,26 +272,31 @@ class sakgiok_latinurls extends Module
         if ($conf_cur == 'null') {
             $cursor = 1;
         } else {
-            $cursor = (int) $conf_cur + 1;
+            $cursor = (int) $conf_cur;
         }
-        $start_time = microtime(true);
 
-        if (function_exists('memory_get_peak_usage'))
+        if ($this->use_exec_time) {
+            $start_time = microtime(true);
+
+            if (function_exists('memory_get_peak_usage'))
+                do {
+                    $cursor = (int) $this->updateAllProductsLoop($cursor, $pr_array);
+                    $time_elapsed = microtime(true) - $start_time;
+                } while ($cursor <= count($pr_array) && Tools::getMemoryLimit() > memory_get_peak_usage() && $time_elapsed < $max_executiontime);
+            else
+                do {
+                    $cursor = (int) $this->updateAllProductsLoop($cursor, $pr_array);
+                    $time_elapsed = microtime(true) - $start_time;
+                } while ($cursor <= count($pr_array) && $time_elapsed < $max_executiontime);
+        } else {
             do {
                 $cursor = (int) $this->updateAllProductsLoop($cursor, $pr_array);
-                $time_elapsed = microtime(true) - $start_time;
-            } while ($cursor < count($pr_array) && Tools::getMemoryLimit() > memory_get_peak_usage() && $time_elapsed < $max_executiontime);
-        else
-            do {
-                $cursor = (int) $this->updateAllProductsLoop($cursor, $pr_array);
-                $time_elapsed = microtime(true) - $start_time;
-            } while ($cursor < count($pr_array) && $time_elapsed < $max_executiontime);
-
-        if ($cursor >= count($pr_array)) {
+            } while ($cursor <= count($pr_array));
+        }
+        if ($cursor > count($pr_array)) {
             Configuration::updateValue('SG_LATINURLS_CONVERTCURSOR', 'null');
             $ret = true;
         } else {
-            Configuration::updateValue('SG_LATINURLS_CONVERTCURSOR', $cursor);
             $this->_warnings[] = $this->l('Proccess paused due to memory or time constrains. Please try again to continue.');
             $ret = false;
         }
@@ -291,19 +308,24 @@ class sakgiok_latinurls extends Module
 
     private function updateAllProductsLoop($cursor, $pr_array)
     {
-        $limit = 10;
+        $limit = (int) Configuration::get('SG_LATINURLS_BATCHSIZE');
         $ret = 0;
         for ($i = $cursor; ($i <= count($pr_array) && $i < $cursor + $limit); $i++) {
-            $p = new ProductCore($pr_array[$i]);
+            $p = new Product($pr_array[$i]);
             foreach ($p->name as $key => $value) {
                 $p->link_rewrite[$key] = $this->parseProductName($value);
             }
             $ret1 = $p->save();
+            Configuration::updateValue('SG_LATINURLS_CONVERTCURSOR', $i + 1);
             if (!$ret1) {
                 $this->_errors[] = sprintf($this->l('Failed to update product with id %d.'), $pr_array[$i]);
             }
-            $ret = $i;
+            $ret = $i + 1;
         }
+//        //time waste
+//        for ($l = 1; $l < 10000000; $l++) {
+//            $a = sin($l * 0.54556652);
+//        }
         return $ret;
     }
 
@@ -754,6 +776,49 @@ class sakgiok_latinurls extends Module
                         ),
                         'hint' => $this->l('Toggle whether fix friendly urls on product save.'),
                     ),
+                    array(
+                        'type' => 'html',
+                        'html_content' => '<hr class="sakgiok_latinurls_form_hr">',
+                        'col' => '12',
+                        'label' => '',
+                        'name' => 'sep',
+                    ),
+                    array(
+                        'type' => 'html',
+                        'html_content' => '<h3 id="sakgiok_latinurls_advheader">' . $this->l('Advanced Options') . '</h3>',
+                        'col' => '12',
+                        'label' => '',
+                        'name' => 'sep',
+                    ),
+                    array(
+                        'type' => 'switch',
+                        'label' => $this->l('Use php\'s max_execution_time when building all products\' friendly urls.'),
+                        'name' => 'SG_LATINURLS_USEEXECTIME',
+                        'is_bool' => true,
+                        'values' => array(
+                            array(
+                                'value' => 1,
+                            ),
+                            array(
+                                'value' => 0,
+                            ),
+                        ),
+                        'hint' => $this->l('Toggle whether to use php\'s max_execution_time value to pause the process or let it run.'),
+                    ),
+                    array(
+                        'type' => 'text',
+                        'label' => $this->l('max_execution_time default value (seconds)'),
+                        'name' => 'SG_LATINURLS_DEFEXECTIME',
+                        'hint' => $this->l('If max_execution_time is greater than this value, or is 0, this value will be used.'),
+                        'class' => 'fixed-width-xxl',
+                    ),
+                    array(
+                        'type' => 'text',
+                        'label' => $this->l('Product processing batch size.'),
+                        'name' => 'SG_LATINURLS_BATCHSIZE',
+                        'hint' => $this->l('Determines how many products will be processed before checking for a timeout.'),
+                        'class' => 'fixed-width-xxl',
+                    ),
                 ),
                 'submit' => array(
                     'title' => $this->l('Save'),
@@ -805,10 +870,16 @@ class sakgiok_latinurls extends Module
             $ret['SG_LATINURLS_AUTOCONVERT'] = Tools::getValue('SG_LATINURLS_AUTOCONVERT', 1);
             $ret['SG_LATINURLS_CHARS_INDEX'] = Tools::getValue('SG_LATINURLS_CHARS_INDEX', 0);
             $ret['SG_LATINURLS_AUTO_UPDATE'] = Tools::getValue('SG_LATINURLS_AUTO_UPDATE', 0);
+            $ret['SG_LATINURLS_USEEXECTIME'] = Tools::getValue('SG_LATINURLS_USEEXECTIME', 1);
+            $ret['SG_LATINURLS_DEFEXECTIME'] = Tools::getValue('SG_LATINURLS_DEFEXECTIME', 29);
+            $ret['SG_LATINURLS_BATCHSIZE'] = Tools::getValue('SG_LATINURLS_BATCHSIZE', 50);
         } else {
             $ret['SG_LATINURLS_AUTOCONVERT'] = Configuration::get('SG_LATINURLS_AUTOCONVERT');
             $ret['SG_LATINURLS_CHARS_INDEX'] = Configuration::get('SG_LATINURLS_CHARS_INDEX');
             $ret['SG_LATINURLS_AUTO_UPDATE'] = Configuration::get('SG_LATINURLS_AUTO_UPDATE');
+            $ret['SG_LATINURLS_USEEXECTIME'] = Configuration::get('SG_LATINURLS_USEEXECTIME');
+            $ret['SG_LATINURLS_DEFEXECTIME'] = Configuration::get('SG_LATINURLS_DEFEXECTIME');
+            $ret['SG_LATINURLS_BATCHSIZE'] = Configuration::get('SG_LATINURLS_BATCHSIZE');
         }
 
         return $ret;
@@ -827,6 +898,9 @@ class sakgiok_latinurls extends Module
         $ret &= Configuration::updateValue('SG_LATINURLS_AUTO_UPDATE', Tools::getValue('SG_LATINURLS_AUTO_UPDATE', 0));
         $ret &= Configuration::updateValue('SG_LATINURLS_AUTOCONVERT', Tools::getValue('SG_LATINURLS_AUTOCONVERT', 1));
         $ret &= Configuration::updateValue('SG_LATINURLS_CHARS_INDEX', Tools::getValue('SG_LATINURLS_CHARS_INDEX', 0));
+        $ret &= Configuration::updateValue('SG_LATINURLS_USEEXECTIME', Tools::getValue('SG_LATINURLS_USEEXECTIME', 0));
+        $ret &= Configuration::updateValue('SG_LATINURLS_DEFEXECTIME', Tools::getValue('SG_LATINURLS_DEFEXECTIME', 25));
+        $ret &= Configuration::updateValue('SG_LATINURLS_BATCHSIZE', Tools::getValue('SG_LATINURLS_BATCHSIZE', 50));
         if ($ret) {
             $this->_msg[] = $this->l('Successful update.');
         } else {

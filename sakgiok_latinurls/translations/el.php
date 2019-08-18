@@ -29,6 +29,13 @@ $_MODULE['<{sakgiok_latinurls}prestashop>sakgiok_latinurls_e2096281389424714b7a4
 $_MODULE['<{sakgiok_latinurls}prestashop>sakgiok_latinurls_10e5f73818e694fef13d7adf5d77aae1'] = 'Το αρχείο που θα χρησιμοποιηθεί κατά την μετατροπή χαρακτήρων.';
 $_MODULE['<{sakgiok_latinurls}prestashop>sakgiok_latinurls_5987cb46dfe43d90577f4d4f0554ae12'] = 'Αυτόματη παραγωγή url κατά την αποθήκευση προϊόντος';
 $_MODULE['<{sakgiok_latinurls}prestashop>sakgiok_latinurls_a6c5d1c765c99ca7fd4a736ff531903d'] = 'Όταν αποθηκεύεται ένα προϊόν, αν η επιλογή είναι επιλεγμένη, θα δημιουργείται και θα αποθηκεύεται και το φιλικό url.';
+$_MODULE['<{sakgiok_latinurls}prestashop>sakgiok_latinurls_9dfc5d5738312210c3c75e68a468691d'] = 'Προχωρημένες Επιλογές';
+$_MODULE['<{sakgiok_latinurls}prestashop>sakgiok_latinurls_651f22aa6ba0126ab6e603e26e8b7bfa'] = 'Χρήση του max_execution_time της php κατά τη δημιουργία friendly url όλων των προϊόντων.';
+$_MODULE['<{sakgiok_latinurls}prestashop>sakgiok_latinurls_982c75a89caad48c08d3af53dcfd6d15'] = 'Επιλέξτε αν θα χρησιμοποιείται η τιμή max_execution_time της php για να σταματήσετε τη διαδικασία ή αν θα την αφήσετε να τρέξει.';
+$_MODULE['<{sakgiok_latinurls}prestashop>sakgiok_latinurls_14a9e3b6e942f3d26225f72ac867ac03'] = 'Η εξ\' ορισμού τιμή max_execution_time (σε δευτερόλεπτα).';
+$_MODULE['<{sakgiok_latinurls}prestashop>sakgiok_latinurls_438e05464e1840e2d0ab6091a1d7e3c1'] = 'Αν η τιμή max_execution_time είναι μεγαλύτερη από αυτή τη τιμή, ή αν είναι μηδέν, θα χρησιμοποιείται αυτή η τιμή.';
+$_MODULE['<{sakgiok_latinurls}prestashop>sakgiok_latinurls_f434a56382a96a097dc50e3e523f14f5'] = 'Μέγεθος της δεσμίδας κατά την επεξεργασίας προϊόντων.';
+$_MODULE['<{sakgiok_latinurls}prestashop>sakgiok_latinurls_083ec7114e88c5434dcdf18be998fd87'] = 'Καθορίζει πόσα προϊόντα θα επεξεργαστούν πριν ελεγχθεί αν θα υπάρξει timeout.';
 $_MODULE['<{sakgiok_latinurls}prestashop>sakgiok_latinurls_c9cc8cce247e49bae79f15173ce97354'] = 'Αποθήκευση';
 $_MODULE['<{sakgiok_latinurls}prestashop>sakgiok_latinurls_254f642527b45bc260048e30704edb39'] = 'Διαμόρφωση';
 $_MODULE['<{sakgiok_latinurls}prestashop>sakgiok_latinurls_b4a34d3f58b039e7685c2e39b5413757'] = 'Επιτυχής ενημέρωση.';
