@@ -24,8 +24,7 @@ if (!defined('_PS_VERSION_')) {
     exit;
 }
 
-class sakgiok_latinurls extends Module
-{
+class sakgiok_latinurls extends Module {
 
     private $_showclearbutton = false;
     private $def_exec_time = 25;
@@ -59,19 +58,19 @@ class sakgiok_latinurls extends Module
         array('name' => 'SG_LATINURLS_AUTOCONVERT', 'type' => 'Int', 'out' => 'auto convert', 'multilang' => 0, 'req' => 0),
         array('name' => 'SG_LATINURLS_USEEXECTIME', 'type' => 'Int', 'out' => 'use max_exec_time', 'multilang' => 0, 'req' => 0),
         array('name' => 'SG_LATINURLS_DEFEXECTIME', 'type' => 'Int', 'out' => 'default max_exec_time value', 'multilang' => 0, 'req' => 0),
-        array('name' => 'SG_LATINURLS_BATCHSIZE', 'type' => 'Int', 'out' => 'default max_exec_time value', 'multilang' => 0, 'req' => 0),
+        array('name' => 'SG_LATINURLS_BATCHSIZE', 'type' => 'Int', 'out' => 'batch size value', 'multilang' => 0, 'req' => 0),
+        array('name' => 'SG_LATINURLS_ONLYEMPTY', 'type' => 'Int', 'out' => 'only empty value', 'multilang' => 0, 'req' => 0),
     );
     protected $_pagination = array(20, 50, 100, 300, 1000);
     protected $_default_pagination = 50;
     private $_productlist_parameters = array();
 
-    public function __construct()
-    {
+    public function __construct() {
         if (Tools::version_compare(_PS_VERSION_, '1.7.0', '>=')) {
             $this->is17 = true;
         }
         $this->name = 'sakgiok_latinurls';
-        $this->version = '1.0.1';
+        $this->version = '1.0.2';
         $this->author = 'Sakis Gkiokas';
         $this->need_instance = 1;
         $this->is_eu_compatible = 1;
@@ -91,8 +90,7 @@ class sakgiok_latinurls extends Module
         $this->path = _PS_MODULE_DIR_ . $this->name . '/';
     }
 
-    public function install()
-    {
+    public function install() {
         if (Shop::isFeatureActive()) {
             Shop::setContext(Shop::CONTEXT_ALL);
         }
@@ -107,6 +105,7 @@ class sakgiok_latinurls extends Module
                 or ! Configuration::updateValue('SG_LATINURLS_DEFEXECTIME', 25)
                 or ! Configuration::updateValue('SG_LATINURLS_USEEXECTIME', 0)
                 or ! Configuration::updateValue('SG_LATINURLS_BATCHSIZE', 50)
+                or ! Configuration::updateValue('SG_LATINURLS_ONLYEMPTY', 1)
         ) {
             return false;
         }
@@ -114,8 +113,7 @@ class sakgiok_latinurls extends Module
         return true;
     }
 
-    public function uninstall()
-    {
+    public function uninstall() {
         if (Shop::isFeatureActive()) {
             Shop::setContext(Shop::CONTEXT_ALL);
         }
@@ -128,6 +126,7 @@ class sakgiok_latinurls extends Module
                 or ! Configuration::deleteByName('SG_LATINURLS_DEFEXECTIME')
                 or ! Configuration::deleteByName('SG_LATINURLS_USEEXECTIME')
                 or ! Configuration::deleteByName('SG_LATINURLS_BATCHSIZE')
+                or ! Configuration::deleteByName('SG_LATINURLS_ONLYEMPTY')
                 or ! parent::uninstall()) {
             return false;
         }
@@ -135,8 +134,7 @@ class sakgiok_latinurls extends Module
         return true;
     }
 
-    public function getContent()
-    {
+    public function getContent() {
         $this->context->controller->addCSS($this->path . 'views/css/sakgiok_latinulrs_admin.css');
         $this->context->controller->addJS($this->path . 'views/js/sakgiok_latinurls_admin.js');
         $this->_html = '';
@@ -232,8 +230,7 @@ class sakgiok_latinurls extends Module
         return $this->_html;
     }
 
-    private function clearAllURLs()
-    {
+    private function clearAllURLs() {
         $ret = true;
         self::$ignoreHook = true;
         $pr_array = $this->getAllProducts();
@@ -256,8 +253,7 @@ class sakgiok_latinurls extends Module
         }
     }
 
-    public function updateAllProducts()
-    {
+    public function updateAllProducts() {
         $ret = true;
         self::$ignoreHook = true;
         $this->def_exec_time = Configuration::get('SG_LATINURLS_DEFEXECTIME');
@@ -306,16 +302,28 @@ class sakgiok_latinurls extends Module
         }
     }
 
-    private function updateAllProductsLoop($cursor, $pr_array)
-    {
+    private function updateAllProductsLoop($cursor, $pr_array) {
         $limit = (int) Configuration::get('SG_LATINURLS_BATCHSIZE');
         $ret = 0;
+        $onlyempty = Configuration::get('SG_LATINURLS_ONLYEMPTY');
         for ($i = $cursor; ($i <= count($pr_array) && $i < $cursor + $limit); $i++) {
             $p = new Product($pr_array[$i]);
+            $needs_save = false;
             foreach ($p->name as $key => $value) {
-                $p->link_rewrite[$key] = $this->parseProductName($value);
+                if ($onlyempty) {
+                    if ($this->checkisempty($p->link_rewrite[$key])) {
+                        $p->link_rewrite[$key] = $this->parseProductName($value);
+                        $needs_save = true;
+                    }
+                } else {
+                    $p->link_rewrite[$key] = $this->parseProductName($value);
+                    $needs_save = true;
+                }
             }
-            $ret1 = $p->save();
+            $ret1 = true;
+            if ($needs_save) {
+                $ret1 = $p->save();
+            }
             Configuration::updateValue('SG_LATINURLS_CONVERTCURSOR', $i + 1);
             if (!$ret1) {
                 $this->_errors[] = sprintf($this->l('Failed to update product with id %d.'), $pr_array[$i]);
@@ -329,8 +337,7 @@ class sakgiok_latinurls extends Module
         return $ret;
     }
 
-    private function renderMessages()
-    {
+    private function renderMessages() {
         $ret = '';
         if (count($this->_errors)) {
             $err = '';
@@ -359,8 +366,7 @@ class sakgiok_latinurls extends Module
 
     //ACTION FORM
 
-    public function renderActionForm()
-    {
+    public function renderActionForm() {
         $resume_url = '';
         $content = '';
         $content_clear = '';
@@ -424,8 +430,7 @@ class sakgiok_latinurls extends Module
 
     //HELP FORM
 
-    public function renderHelpForm($ajax = false, $check_update = false, $hide = true)
-    {
+    public function renderHelpForm($ajax = false, $check_update = false, $hide = true) {
         $ret = '';
         $update_status = array(
             'res' => '',
@@ -477,8 +482,7 @@ class sakgiok_latinurls extends Module
         return $ret;
     }
 
-    public function getUpdateStatus()
-    {
+    public function getUpdateStatus() {
         $ret = '';
         $info_var = 'SG_LATINURLS_INFO_LINK';
         $git_var = 'SG_LATINURLS_GITHUB_LINK';
@@ -527,8 +531,7 @@ class sakgiok_latinurls extends Module
         return $ret;
     }
 
-    public function updateValueAllShops($key, $value)
-    {
+    public function updateValueAllShops($key, $value) {
         $this->storeContextShop();
         if (Shop::isFeatureActive()) {
             Shop::setContext(Shop::CONTEXT_ALL);
@@ -547,8 +550,7 @@ class sakgiok_latinurls extends Module
         $this->resetContextShop();
     }
 
-    public function storeContextShop()
-    {
+    public function storeContextShop() {
         if (Shop::isFeatureActive()) {
             $this->tmp_shop_context_type = Shop::getContext();
             if ($this->tmp_shop_context_type != Shop::CONTEXT_ALL) {
@@ -561,8 +563,7 @@ class sakgiok_latinurls extends Module
         }
     }
 
-    public function resetContextShop()
-    {
+    public function resetContextShop() {
         if (Shop::isFeatureActive()) {
             if ($this->tmp_shop_context_type != Shop::CONTEXT_ALL) {
                 Shop::setContext($this->tmp_shop_context_type, $this->tmp_shop_context_id);
@@ -572,12 +573,12 @@ class sakgiok_latinurls extends Module
         }
     }
 
-    public function hookActionProductSave($params)
-    {
+    public function hookActionProductSave($params) {
         if (self::$ignoreHook) {
             return;
         }
         $autofix = Configuration::get('SG_LATINURLS_AUTOCONVERT');
+        $onlyempty = Configuration::get('SG_LATINURLS_ONLYEMPTY');
         if (!$autofix) {
             return;
         }
@@ -586,21 +587,41 @@ class sakgiok_latinurls extends Module
             self::$allready_run = true;
             $this->char_file = $this->getActiveCharFile();
             if ($this->char_file != '') {
+                $needs_save = false;
                 if (isset($params['product'])) {
                     $product = $params['product'];
                 } elseif (isset($params['id_product'])) {
                     $product = new ProductCore($params['id_product']);
                 }
                 foreach ($product->name as $key => $pr_name) {
-                    $product->link_rewrite[$key] = $this->parseProductName($pr_name);
+                    if ($onlyempty) {
+                        if ($this->checkisempty($product->link_rewrite[$key])) {
+                            $product->link_rewrite[$key] = $this->parseProductName($pr_name);
+                            $needs_save = true;
+                        }
+                    } else {
+                        $product->link_rewrite[$key] = $this->parseProductName($pr_name);
+                        $needs_save = true;
+                    }
                 }
-                $product->save();
+                if ($needs_save) {
+                    $product->save();
+                }
             }
         }
     }
 
-    private function getActiveCharFile()
-    {
+    private function checkisempty($name) {
+        $name = str_replace("-", "", $name);
+        $name = trim($name);
+        if ($name === '') {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    private function getActiveCharFile() {
         $ret = '';
         $files = $this->getCharFileList();
         if ($files) {
@@ -616,8 +637,7 @@ class sakgiok_latinurls extends Module
         return $ret;
     }
 
-    private function getCharFileList()
-    {
+    private function getCharFileList() {
         $files = scandir(_PS_MODULE_DIR_ . $this->name . '/chars');
         $files_1 = array();
         if ($files) {
@@ -634,8 +654,7 @@ class sakgiok_latinurls extends Module
         return $files_1;
     }
 
-    private function parseProductName($pr_name)
-    {
+    private function parseProductName($pr_name) {
         $this->char_file = $this->getActiveCharFile();
         include _PS_MODULE_DIR_ . $this->name . '/chars/' . $this->char_file . '.php';
         $output = preg_replace(array_keys($chars), array_values($chars), $pr_name);
@@ -644,8 +663,7 @@ class sakgiok_latinurls extends Module
     }
 
     ///TEST FORM
-    public function renderTestForm($response)
-    {
+    public function renderTestForm($response) {
         $test_field_values = $this->getTestFieldsValues();
 
         $fields_form = array(
@@ -699,8 +717,7 @@ class sakgiok_latinurls extends Module
         return $ret;
     }
 
-    protected function getTestFieldsValues($getfrompost = false)
-    {
+    protected function getTestFieldsValues($getfrompost = false) {
         $ret = array();
         $ret['tstfrm_text'] = Tools::getValue('tstfrm_text', '');
 
@@ -708,8 +725,7 @@ class sakgiok_latinurls extends Module
     }
 
 ///CONFIG FORM
-    public function renderConfigForm($hide = false, $getFromPost = false)
-    {
+    public function renderConfigForm($hide = false, $getFromPost = false) {
         $config_field_values = $this->getConfigFieldsValues($getFromPost);
         $options_charfiles = array();
         $charfiles = $this->getCharFileList();
@@ -775,6 +791,21 @@ class sakgiok_latinurls extends Module
                             ),
                         ),
                         'hint' => $this->l('Toggle whether fix friendly urls on product save.'),
+                    ),
+                    array(
+                        'type' => 'switch',
+                        'label' => $this->l('Only fix empty urls'),
+                        'name' => 'SG_LATINURLS_ONLYEMPTY',
+                        'is_bool' => true,
+                        'values' => array(
+                            array(
+                                'value' => 1,
+                            ),
+                            array(
+                                'value' => 0,
+                            ),
+                        ),
+                        'hint' => $this->l('Only empty urls [or containing only dash (-) characters] will be auto corrected.'),
                     ),
                     array(
                         'type' => 'html',
@@ -863,11 +894,11 @@ class sakgiok_latinurls extends Module
         return $ret;
     }
 
-    protected function getConfigFieldsValues($getfrompost = false)
-    {
+    protected function getConfigFieldsValues($getfrompost = false) {
         $ret = array();
         if ($getfrompost) {
             $ret['SG_LATINURLS_AUTOCONVERT'] = Tools::getValue('SG_LATINURLS_AUTOCONVERT', 1);
+            $ret['SG_LATINURLS_ONLYEMPTY'] = Tools::getValue('SG_LATINURLS_ONLYEMPTY', 1);
             $ret['SG_LATINURLS_CHARS_INDEX'] = Tools::getValue('SG_LATINURLS_CHARS_INDEX', 0);
             $ret['SG_LATINURLS_AUTO_UPDATE'] = Tools::getValue('SG_LATINURLS_AUTO_UPDATE', 0);
             $ret['SG_LATINURLS_USEEXECTIME'] = Tools::getValue('SG_LATINURLS_USEEXECTIME', 1);
@@ -875,6 +906,7 @@ class sakgiok_latinurls extends Module
             $ret['SG_LATINURLS_BATCHSIZE'] = Tools::getValue('SG_LATINURLS_BATCHSIZE', 50);
         } else {
             $ret['SG_LATINURLS_AUTOCONVERT'] = Configuration::get('SG_LATINURLS_AUTOCONVERT');
+            $ret['SG_LATINURLS_ONLYEMPTY'] = Configuration::get('SG_LATINURLS_ONLYEMPTY');
             $ret['SG_LATINURLS_CHARS_INDEX'] = Configuration::get('SG_LATINURLS_CHARS_INDEX');
             $ret['SG_LATINURLS_AUTO_UPDATE'] = Configuration::get('SG_LATINURLS_AUTO_UPDATE');
             $ret['SG_LATINURLS_USEEXECTIME'] = Configuration::get('SG_LATINURLS_USEEXECTIME');
@@ -885,18 +917,17 @@ class sakgiok_latinurls extends Module
         return $ret;
     }
 
-    private function _validate_conf()
-    {
+    private function _validate_conf() {
         return $this->validateFormData($this->_validateConfigFormValues);
     }
 
-    private function _postproccess_conf()
-    {
+    private function _postproccess_conf() {
         $this->_msg = array();
         $this->_errors = array();
         $ret = true;
         $ret &= Configuration::updateValue('SG_LATINURLS_AUTO_UPDATE', Tools::getValue('SG_LATINURLS_AUTO_UPDATE', 0));
         $ret &= Configuration::updateValue('SG_LATINURLS_AUTOCONVERT', Tools::getValue('SG_LATINURLS_AUTOCONVERT', 1));
+        $ret &= Configuration::updateValue('SG_LATINURLS_ONLYEMPTY', Tools::getValue('SG_LATINURLS_ONLYEMPTY', 1));
         $ret &= Configuration::updateValue('SG_LATINURLS_CHARS_INDEX', Tools::getValue('SG_LATINURLS_CHARS_INDEX', 0));
         $ret &= Configuration::updateValue('SG_LATINURLS_USEEXECTIME', Tools::getValue('SG_LATINURLS_USEEXECTIME', 0));
         $ret &= Configuration::updateValue('SG_LATINURLS_DEFEXECTIME', Tools::getValue('SG_LATINURLS_DEFEXECTIME', 25));
@@ -909,8 +940,7 @@ class sakgiok_latinurls extends Module
         return $ret;
     }
 
-    private function validateFormData($param)
-    {
+    private function validateFormData($param) {
         $this->_errors = array();
         $ret = true;
 
@@ -950,13 +980,11 @@ class sakgiok_latinurls extends Module
         return $ret;
     }
 
-    private function valInt($inVal)
-    {
+    private function valInt($inVal) {
         return Validate::isInt($inVal);
     }
 
-    private function valIntOrEmpty($inVal)
-    {
+    private function valIntOrEmpty($inVal) {
         if ($inVal == '') {
             return true;
         } else {
@@ -964,33 +992,27 @@ class sakgiok_latinurls extends Module
         }
     }
 
-    private function valText($inVal)
-    {
+    private function valText($inVal) {
         return Validate::isCleanHtml($inVal);
     }
 
-    private function valPrice($inVal)
-    {
+    private function valPrice($inVal) {
         return Validate::isPrice($inVal);
     }
 
-    private function valPercentage($inVal)
-    {
+    private function valPercentage($inVal) {
         return Validate::isPercentage($inVal);
     }
 
-    private function valArrayWithIds($inVal)
-    {
+    private function valArrayWithIds($inVal) {
         return Validate::isArrayWithIds($inVal);
     }
 
-    private function valArrayWithIdsWithZero($inVal)
-    {
+    private function valArrayWithIdsWithZero($inVal) {
         return $this->isArrayWithIdsWithZero($inVal);
     }
 
-    private function isArrayWithIdsWithZero($ids)
-    {
+    private function isArrayWithIdsWithZero($ids) {
         if (count($ids)) {
             foreach ($ids as $id) {
                 if (!Validate::isUnsignedInt($id)) {
@@ -1001,8 +1023,7 @@ class sakgiok_latinurls extends Module
         return true;
     }
 
-    protected function renderProductList()
-    {
+    protected function renderProductList() {
         $helper = new HelperList();
 
         $helper->title = $this->l('Product List');
@@ -1035,8 +1056,7 @@ class sakgiok_latinurls extends Module
         return $helper->generateList($values, $this->getProductList());
     }
 
-    public function getProductListHeader()
-    {
+    public function getProductListHeader() {
         $ret = '';
         foreach (Language::getLanguages(true) as $lang) {
 
@@ -1052,8 +1072,7 @@ class sakgiok_latinurls extends Module
         return $ret;
     }
 
-    public function getProductListValues(&$count_pr)
-    {
+    public function getProductListValues(&$count_pr) {
         $vals = array();
         $pr_array = array();
 
@@ -1103,8 +1122,7 @@ class sakgiok_latinurls extends Module
         return $ret;
     }
 
-    private function getAllProducts()
-    {
+    private function getAllProducts() {
         $pr_array = array();
         $p = Product::getProducts((int) Configuration::get('PS_LANG_DEFAULT'), 0, 0, 'id_product', 'ASC');
         $i = 1;
@@ -1117,8 +1135,7 @@ class sakgiok_latinurls extends Module
         return $pr_array;
     }
 
-    public function getProductList()
-    {
+    public function getProductList() {
         $ret1 = array(
             'id_sakgiok_latinurls_product' => array('title' => $this->l('Product ID'), 'class' => 'sakgiok_latinurls_col_id', 'type' => 'text', 'align' => 'center', 'orderby' => true),
             'sakgiok_latinurls_product_name' => array('title' => $this->l('Product Name'), 'type' => 'html', 'align' => 'center', 'orderby' => false, 'class' => 'sakgiok_latinurls_col_name'),

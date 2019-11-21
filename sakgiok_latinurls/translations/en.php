@@ -29,6 +29,8 @@ $_MODULE['<{sakgiok_latinurls}prestashop>sakgiok_latinurls_e2096281389424714b7a4
 $_MODULE['<{sakgiok_latinurls}prestashop>sakgiok_latinurls_10e5f73818e694fef13d7adf5d77aae1'] = 'The file to use for transforming from one language to another.';
 $_MODULE['<{sakgiok_latinurls}prestashop>sakgiok_latinurls_5987cb46dfe43d90577f4d4f0554ae12'] = 'Auto fix friendly url on product save';
 $_MODULE['<{sakgiok_latinurls}prestashop>sakgiok_latinurls_a6c5d1c765c99ca7fd4a736ff531903d'] = 'Toggle whether fix friendly urls on product save.';
+$_MODULE['<{sakgiok_latinurls}prestashop>sakgiok_latinurls_d2886f294d2469b285f3543099aaeb0b'] = 'Only fix empty urls';
+$_MODULE['<{sakgiok_latinurls}prestashop>sakgiok_latinurls_30d16b88e1227b44e2e8bb1f68e6c3b9'] = 'Only empty urls [or containing only dash (-) characters] will be auto corrected.';
 $_MODULE['<{sakgiok_latinurls}prestashop>sakgiok_latinurls_9dfc5d5738312210c3c75e68a468691d'] = 'Advanced Options';
 $_MODULE['<{sakgiok_latinurls}prestashop>sakgiok_latinurls_651f22aa6ba0126ab6e603e26e8b7bfa'] = 'Use php\'s max_execution_time when building all products\' friendly urls.';
 $_MODULE['<{sakgiok_latinurls}prestashop>sakgiok_latinurls_982c75a89caad48c08d3af53dcfd6d15'] = 'Toggle whether to use php\'s max_execution_time value to pause the process or let it run.';
